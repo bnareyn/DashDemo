@@ -47,10 +47,10 @@ app.layout = html.Div(
         ),
         html.Div([
             dcc.Graph(figure=fig, id='world-map')
-        ], style={'width': '70%', 'display': 'inline-block', 'padding': '2 2'}),
+        ], style={'width': '70%', 'display': 'inline-block', 'padding': '2 2', 'vertical-align': 'top'}),
     html.Div([
-        html.Div([dcc.Graph(id='yearly-chart')], style={'height':300}),
-        html.Div([dcc.Graph(id='y-time-series')], style={'height':300}),
+        html.Div([dcc.Graph(id='yearly-chart')], style={'vertical-align': 'top', 'height':300}),
+        #html.Div([dcc.Graph(id='y-time-series')], style={'vertical-align': 'top', 'height':300}),
     ], style={'display': 'inline-block', 'width': '30%', 'padding': '2 2'}),       
 ])
 
