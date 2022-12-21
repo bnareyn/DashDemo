@@ -75,7 +75,6 @@ app.layout = html.Div(
         
 @app.callback(
     Output('yearly-chart', 'figure'),
-    Output('y-time-series', 'figure'),
     Input('world-map', 'clickData'))
 def update_line_chart(clickData):
     countryCode = None
