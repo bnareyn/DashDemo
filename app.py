@@ -1,94 +1,86 @@
-import dash
-from dash import html, dcc
-from dash import Input, Output
-
-import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 import pandas as pd
 
-app = dash.Dash(__name__)
-app.title = "DAC Dashboard"
-#server = app.server
-
-df = pd.read_csv('unemployment.csv')
-
-id_vars = df.columns[:2]
-value_vars = df.columns[2:]
-    
-dfMolten = pd.melt(df, id_vars = id_vars, value_vars = value_vars, var_name='Year', value_name='Unemployment')
-
-fig = px.choropleth(
-    dfMolten,  
-    locations= dfMolten['Country Code'], 
-    color="Unemployment", 
-    animation_frame=dfMolten["Year"],
-    animation_group=dfMolten["Country Name"],
-    hover_name=dfMolten["Country Name"],
-    color_continuous_scale= 'Portland',
-    projection="mercator",
-    labels={ 'Unemployment' : 'Unemployment Rate'},
+# read in volcano database data
+df = pd.read_csv(
+    "https://raw.githubusercontent.com/plotly/datasets/master/volcano_db.csv",
+    encoding="iso-8859-1",
 )
 
-fig.update_layout(height = 600, margin={"r":0,"t":0,"l":0,"b":0})
-fig.update_layout(coloraxis_showscale=False)
+# frequency of Country
+freq = df
+freq = freq.Country.value_counts().reset_index().rename(columns={"index": "x"})
 
-#fig1 = px.scatter(dfMolten, x ='Year', y ='Unemployment', color="Country Name")
-#fig1.update_traces(mode='lines+markers')
-#fig1.update_layout(height=300, margin={'l': 20, 'b': 30, 'r': 10, 't': 10})
-#fig1.update_layout(coloraxis_showscale=False)
-#fig1.update_traces(showlegend=False)
-app.layout = html.Div(
-    children = [
-        html.Div(
-            [
-                html.Img(src=app.get_asset_url("dac_01.png"), className="logo", width='300px'),
-                html.H4("DAC BOARD"),
-            ],
-            className="header__title",
-        ),
-        html.Div([
-            dcc.Graph(figure=fig, id='world-map')
-        ], style={'width': '60%', 'display': 'inline-block', 'padding': '0 20'}),
-    html.Div([
-        html.Div([dcc.Graph(id='yearly-chart')], style={'height':300}),
-        html.Div([dcc.Graph(id='y-time-series')], style={'height':300}),
-    ], style={'display': 'inline-block', 'width': '35%'}),       
+# read in 3d volcano surface data
+df_v = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/volcano.csv")
+
+# Initialize figure with subplots
+fig = make_subplots(
+    rows=2, cols=2,
+    column_widths=[0.6, 0.4],
+    row_heights=[0.4, 0.6],
+    specs=[[{"type": "scattergeo", "rowspan": 2}, {"type": "bar"}],
+           [            None                    , {"type": "surface"}]])
+
+# Add scattergeo globe map of volcano locations
+fig.add_trace(
+    go.Scattergeo(lat=df["Latitude"],
+                  lon=df["Longitude"],
+                  mode="markers",
+                  hoverinfo="text",
+                  showlegend=False,
+                  marker=dict(color="crimson", size=4, opacity=0.8)),
+    row=1, col=1
+)
+
+# Add locations bar chart
+fig.add_trace(
+    go.Bar(x=freq["x"][0:10],y=freq["Country"][0:10], marker=dict(color="crimson"), showlegend=False),
+    row=1, col=2
+)
+
+# Add 3d surface of volcano
+fig.add_trace(
+    go.Surface(z=df_v.values.tolist(), showscale=False),
+    row=2, col=2
+)
+
+# Update geo subplot properties
+fig.update_geos(
+    projection_type="orthographic",
+    landcolor="white",
+    oceancolor="MidnightBlue",
+    showocean=True,
+    lakecolor="LightBlue"
+)
+
+# Rotate x-axis labels
+fig.update_xaxes(tickangle=45)
+
+# Set theme, margin, and annotation in layout
+fig.update_layout(
+    template="plotly_dark",
+    margin=dict(r=10, t=25, b=40, l=60),
+    annotations=[
+        dict(
+            text="Source: NOAA",
+            showarrow=False,
+            xref="paper",
+            yref="paper",
+            x=0,
+            y=0)
+    ]
+)
+
+
+import dash
+from dash import dcc, html
+
+app = dash.Dash()
+app.layout = html.Div([
+    dcc.Graph(figure=fig)
 ])
 
-
-#@app.callback(
-#    Output('yearly-chart', 'figure'),
-#    Input('world-map', 'hoverData'))
-#def update_line_chart(hoverData):
-#    fig = None
-#    if hoverData:
-#        hData = hoverData["points"][0]
-#        countryCode = hData.get('location', None)
-#        if countryCode:
-#            print("Hover")
-#            dfCountry = dfMolten[dfMolten['Country Code'] == countryCode]
-#            fig = px.scatter(dfCountry, x ='Year', y ='Unemployment')
-#            fig.update_traces(mode='lines+markers')
-#            fig.update_layout(height=225, margin={'l': 20, 'b': 30, 'r': 10, 't': 10})
-#            return fig
-#    return fig
-
-        
-@app.callback(
-    Output('yearly-chart', 'figure'),
-    Input('world-map', 'clickData'))
-def update_line_chart(clickData):
-    countryCode = None
-    if clickData:
-        hData = clickData["points"][0]
-        countryCode = hData.get('location', None)
-    if countryCode is None:
-        countryCode = 'CAN'
-
-    dfCountry = dfMolten[dfMolten['Country Code'] == countryCode]
-    fig = px.scatter(dfCountry, x ='Year', y ='Unemployment')
-    fig.update_traces(mode='lines+markers')
-    fig.update_layout(height=300, margin={'l': 20, 'b': 30, 'r': 10, 't': 10})
-    return fig
-
-app.run_server(debug=True) 
+app.run_server(debug=True, use_reloader=False)  # Turn off reloader if inside Jupyter
