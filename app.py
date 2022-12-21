@@ -25,7 +25,6 @@ fig = px.choropleth(
     animation_group=dfMolten["Country Name"],
     hover_name=dfMolten["Country Name"],
     color_continuous_scale= 'Portland',
-    projection="mercator",
     labels={ 'Unemployment' : 'Unemployment Rate'},
 )
 
