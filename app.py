@@ -40,8 +40,8 @@ app.layout = html.Div(
     children = [
         html.Div(
             [
-                html.Img(src=app.get_asset_url("dac_01.png"), className="logo", width='300px'),
-                html.H4("DAC BOARD"),
+                html.Img(src=app.get_asset_url("dac_01.png"), className="logo", width='450px'),
+                html.H4("DAC BOARD")
             ],
             className="header__title",
         ),
@@ -91,4 +91,4 @@ def update_line_chart(clickData):
     return fig
 
 #app.run_server(debug=True) 
-app.run_server(debug=True, use_reloader=False)  # Turn off reloader if inside Jupyter
+app.run_server(debug=False, use_reloader=False)  # Turn off reloader if inside Jupyter
